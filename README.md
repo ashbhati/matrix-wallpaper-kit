@@ -88,63 +88,46 @@ The build overwrites the final MP4 and PNG inside `artifacts/`, then runs the ve
 
 The verifier checks codec, Apple-compatible `hvc1` tag, resolution, frame rate, frame count, duration, full-file decoding, and the still-image dimensions.
 
-## Deploy on macOS
+## Deploy on macOS, including the Lock Screen
 
-### 1. Install the static fallback
+The final deployment uses **Phosphene 1.7**, a signed and Apple-notarized open-source app that registers a native macOS wallpaper provider. This lets macOS use the video through its own Wallpaper and Lock Screen pipeline instead of placing a separate animation window behind the desktop.
 
-1. Open **System Settings → Wallpaper**.
-2. Under **Your Photos**, choose **Add Photo → Choose File**.
-3. Select `artifacts/matrix-rain-matching-still-2560x1664.png`.
-4. Choose **Fill Screen**.
-5. Enable **Show on all Spaces** if desired.
+- Project: <https://github.com/kageroumado/phosphene>
+- Releases: <https://github.com/kageroumado/phosphene/releases>
 
-This leaves a visually matched frame underneath the live layer whenever animation is paused or stopped.
-
-### 2. Install Waraq
-
-The tested deployment uses **Waraq 1.0.0**, a signed and Apple-notarized open-source live-wallpaper app:
-
-- Project: <https://github.com/bahamut42/waraq>
-- Releases: <https://github.com/bahamut42/waraq/releases>
-
-Download the current signed/notarized DMG from the official release page, verify Gatekeeper acceptance, and place `Waraq.app` in `/Applications` or `~/Applications`.
+Download the current signed/notarized DMG from the official release page, verify Gatekeeper acceptance, and place `Phosphene.app` in `/Applications` or `~/Applications`.
 
 Optional verification before opening:
 
 ```sh
-codesign --verify --deep --strict --verbose=2 /path/to/Waraq.app
-spctl -a -vv --type execute /path/to/Waraq.app
+codesign --verify --deep --strict --verbose=2 /path/to/Phosphene.app
+spctl -a -vv --type execute /path/to/Phosphene.app
 ```
 
 Expected Gatekeeper result: `accepted`, with `source=Notarized Developer ID`.
 
-### 3. Import and activate the animation
+### Import and activate the animation
 
-1. Open Waraq and complete its setup wizard.
-2. Open **Waraq Settings → Library**.
-3. Choose **Import → From files…**.
-4. Select `artifacts/matrix-rain-animated-2560x1664-hevc.mp4`.
-5. Open **Displays → Configure** for the target display.
-6. Select the imported `matrix-rain-animated-2560x1664-hevc` video.
-7. Choose **Fill Screen**.
-8. Enable **Loop** and **Muted**.
-9. Click **Done** and confirm the display reads **LIVE**.
-10. Under **General**, enable **Launch Waraq at login**.
+1. Open Phosphene.
+2. Choose **Add Video** and select `artifacts/matrix-rain-animated-2560x1664-hevc.mp4`.
+3. In Phosphene's library, select the imported video and choose **Use as Wallpaper…**.
+4. In **System Settings → Wallpaper**, find **Phosphene — Video Wallpapers**.
+5. Select **Matrix Rain Animated 2560x1664 Hevc**.
+6. Leave **Show on all Spaces** enabled if desired.
 
-Recommended power settings are **Pause when an app goes fullscreen** and **Pause in Low Power Mode**. Continuous video playback uses more energy than a static wallpaper.
+The selection is applied system-wide through Phosphene's `com.apple.wallpaper` extension. The same native choice supplies the desktop and the animated Lock Screen transition; no separate live-wallpaper layer or login item is required.
+
+The matching PNG remains useful as a portable static fallback but should not be selected while the native video wallpaper is active.
 
 ## Tested operational configuration
 
-- Waraq installed in `~/Applications/Waraq.app`
-- Custom video imported into Waraq's local wallpaper library
-- Main display assignment enabled and reported as `LIVE`
-- Fit mode: Fill Screen
-- Loop: enabled
-- Audio: muted
-- Launch at login: enabled
-- Full-screen pause: enabled
-- Low Power Mode pause: enabled
-- macOS static fallback: matching frame-zero PNG
+- Phosphene 1.7 installed in `~/Applications/Phosphene.app`
+- Custom HEVC video imported into Phosphene's extension container
+- **Matrix Rain Animated 2560x1664 Hevc** selected in System Settings
+- macOS wallpaper provider: `glass.kagerou.phosphene.extension`
+- Desktop options report **Animated video wallpaper**
+- **Show on all Spaces** enabled
+- Matching frame-zero PNG retained in the kit as a static fallback
 
 ## Troubleshooting
 
@@ -160,24 +143,23 @@ Positive values make the apparent motion run bottom to top.
 
 ### Video does not appear
 
-- Confirm the target display is enabled and reads **LIVE** in Waraq.
-- Re-select the imported video under **Displays → Configure**.
-- Confirm **Loop** is enabled.
-- Quit and reopen Waraq after replacing the underlying video file.
+- Open Phosphene's library and confirm the imported video appears.
+- In System Settings, confirm the **Phosphene — Video Wallpapers** section appears.
+- Re-select the Matrix item in that section.
+- If the provider is missing, quit and reopen Phosphene, then reopen Wallpaper settings.
 
 ### Video appears cropped
 
-The supplied asset is 2560 × 1664. On a display with a different aspect ratio, **Fill Screen** intentionally crops the edges. Choose a fit mode in Waraq if full-frame visibility is more important than edge-to-edge coverage.
+The supplied asset is 2560 × 1664. On a display with a different aspect ratio, macOS may crop the edges to fill the screen.
 
 ### Restore a static desktop
 
-Turn off **Run wallpaper on this display** in Waraq or quit Waraq. The matching PNG remains configured as the underlying macOS wallpaper.
+In **System Settings → Wallpaper**, select `matrix-rain-matching-still-2560x1664.png` under **Your Photos**.
 
 ## Safety and portability notes
 
-- The deployment does not modify Apple's private wallpaper catalog.
-- Waraq stores an imported copy in the current user's Application Support folder.
-- The original MP4 in this kit can be archived independently of Waraq.
-- Reinstalling or replacing Waraq does not require rebuilding the media.
-- Verify future Waraq releases before running them; do not bypass Gatekeeper for an unsigned build.
-
+- The deployment does not replace or modify an Apple Aerial asset.
+- Phosphene stores an imported copy in its sandboxed wallpaper-extension container.
+- The original MP4 in this kit can be archived independently of Phosphene.
+- Reinstalling or replacing Phosphene does not require rebuilding the media.
+- Verify future Phosphene releases before running them; do not bypass Gatekeeper for an unsigned build.
